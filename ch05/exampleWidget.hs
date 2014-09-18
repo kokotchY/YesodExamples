@@ -23,6 +23,17 @@ getRootR = defaultLayout $ do
     toWidget [hamlet| <h1>Here's one way of including content|]
     [whamlet| <h2>Here's another|]
     toWidgetBody [julius|alert("This is included in the body itself"); |]
+    page
+
+page = [whamlet|
+<p>This is my page. I hope you enjoyed it.
+^{footer}
+|]
+
+footer = [hamlet|
+<footer>
+    <p>That's all folks!
+|]
 
 main :: IO ()
 main = warp 3000 ExampleWidget
