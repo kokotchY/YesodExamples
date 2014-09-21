@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeFamilies, QuasiQuotes, MultiParamTypeClasses, TemplateHaskell, OverloadedStrings #-}
 
 import Yesod
+import Data.Time (getCurrentTime)
 
 data Message = Message
 
@@ -24,10 +25,11 @@ $doctype 5
         ^{bodyTags}
 |]
 
-getRootR = defaultLayout [whamlet|
-<p>
-    <a href=@{RootR}>RootR
-    Youpie
-|]
+getRootR :: Handler Html
+getRootR = do
+    now <- liftIO getCurrentTime
+    setMessage $ toHtml $ "You previously visited at: " ++ show now
+    defaultLayout [whamlet|<p>Try refreshing|]
 
+main :: IO ()
 main = warp 3000 Message
