@@ -4,8 +4,9 @@ import Yesod.Form.Jquery
 import Data.Time (Day)
 import Data.Time.Clock (getCurrentTime, utctDay)
 import Data.Time.Calendar (toGregorian)
-import Data.Text (Text)
+import Data.Text (Text, pack)
 import Control.Applicative ((<$>),(<*>))
+import Control.Arrow ((&&&))
 
 data Synopsis = Synopsis
 
@@ -33,14 +34,18 @@ data Person = Person {
 data Car = Car {
     carModel :: Text,
     carYear :: Int,
-    carColor :: Maybe Text
+    carColor :: Maybe Color
 } deriving (Show)
+
+data Color = Red | Blue | Gray | Black
+    deriving (Show, Eq, Enum, Bounded)
+
 
 carAForm :: Maybe Car -> AForm Handler Car
 carAForm mcar = Car
     <$> areq textField "Model" (carModel <$> mcar)
     <*> areq carYearField "Year" (carYear <$> mcar)
-    <*> aopt textField "Color" (carColor <$> mcar)
+    <*> aopt (radioFieldList colors) "Color" (carColor <$> mcar)
     where
         carYearField = checkM inPast $ checkBool (>= 1990) errorMessage intField
         inPast y = do
@@ -56,6 +61,8 @@ carAForm mcar = Car
             return $ fromInteger year
         errorMessage :: Text
         errorMessage = "Your car is too old, get a new one!"
+        colors :: [(Text, Color)]
+        colors = map (pack . show &&& id) $ [minBound..maxBound]
 
 carForm :: Html -> MForm Handler (FormResult Car, Widget)
 carForm = renderDivs $ carAForm Nothing
