@@ -2,6 +2,8 @@
 import Yesod
 import Yesod.Form.Jquery
 import Data.Time (Day)
+import Data.Time.Clock (getCurrentTime, utctDay)
+import Data.Time.Calendar (toGregorian)
 import Data.Text (Text)
 import Control.Applicative ((<$>),(<*>))
 
@@ -40,7 +42,18 @@ carAForm mcar = Car
     <*> areq carYearField "Year" (carYear <$> mcar)
     <*> aopt textField "Color" (carColor <$> mcar)
     where
-        carYearField = checkBool (>= 1990) errorMessage intField
+        carYearField = checkM inPast $ checkBool (>= 1990) errorMessage intField
+        inPast y = do
+            thisYear <- liftIO getCurrentYear
+            return $ if y <= thisYear
+                then Right y
+                else Left ("You have a time machine!" :: Text)
+        getCurrentYear :: IO Int
+        getCurrentYear = do
+            now <- getCurrentTime
+            let today = utctDay now
+            let (year, _, _) = toGregorian today
+            return $ fromInteger year
         errorMessage :: Text
         errorMessage = "Your car is too old, get a new one!"
 
