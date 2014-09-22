@@ -29,6 +29,9 @@ personForm extra = do
 ##{fvId ageView} {
         width: 3em;
 }
+.mandatory {
+    color: red;
+}
 |]
         [whamlet|
 #{extra}
@@ -38,6 +41,8 @@ personForm extra = do
     \ and I am #
     ^{fvInput ageView}
     \ years old. #
+    $if fvRequired ageView
+        <span .mandatory>*
     <input type=submit value="Introduce myself">
 |]
     return (personRes, widget)
