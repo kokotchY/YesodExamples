@@ -37,11 +37,15 @@ data Car = Car {
 carAForm :: Maybe Car -> AForm Handler Car
 carAForm mcar = Car
     <$> areq textField "Model" (carModel <$> mcar)
-    <*> areq intField "Year" (carYear <$> mcar)
+    <*> areq carYearField "Year" (carYear <$> mcar)
     <*> aopt textField "Color" (carColor <$> mcar)
+    where
+        carYearField = checkBool (>= 1990) errorMessage intField
+        errorMessage :: Text
+        errorMessage = "Your car is too old, get a new one!"
 
 carForm :: Html -> MForm Handler (FormResult Car, Widget)
-carForm = renderTable $ carAForm Nothing
+carForm = renderDivs $ carAForm Nothing
 
 personForm :: Html -> MForm Handler (FormResult Person, Widget)
 personForm = renderDivs $ Person
@@ -88,7 +92,12 @@ postCarR = do
     ((result, widget), enctype) <- runFormPost carForm
     case result of
         FormSuccess car -> defaultLayout [whamlet|<p>#{show car}|]
-        _ -> defaultLayout [whamlet|<p>Error in formular|]
+        _ -> defaultLayout [whamlet|
+<p>Invalid input, let's try again.
+<form method=post action=@{CarR} enctype=#{enctype}>
+    ^{widget}
+    <input type=submit>
+|]
 
 main :: IO ()
 main = warp 3000 Synopsis
