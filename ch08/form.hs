@@ -30,16 +30,18 @@ data Person = Person {
 
 data Car = Car {
     carModel :: Text,
-    carYear :: Int
+    carYear :: Int,
+    carColor :: Maybe Text
 } deriving (Show)
 
-carAForm :: AForm Handler Car
-carAForm = Car
-    <$> areq textField "Model" Nothing
-    <*> areq intField "Year" Nothing
+carAForm :: Maybe Car -> AForm Handler Car
+carAForm mcar = Car
+    <$> areq textField "Model" (carModel <$> mcar)
+    <*> areq intField "Year" (carYear <$> mcar)
+    <*> aopt textField "Color" (carColor <$> mcar)
 
 carForm :: Html -> MForm Handler (FormResult Car, Widget)
-carForm = renderTable carAForm
+carForm = renderTable $ carAForm Nothing
 
 personForm :: Html -> MForm Handler (FormResult Person, Widget)
 personForm = renderDivs $ Person
