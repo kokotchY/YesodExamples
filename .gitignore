@@ -1,4 +1,4 @@
 *.hi
 *.o
 *.swp
-client_session_key.aes
+*.aes

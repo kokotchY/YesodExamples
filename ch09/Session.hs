@@ -7,7 +7,9 @@ data App = App
 
 mkYesod "App" [parseRoutes|
 / HomeR GET POST
+/setname SetNameR GET POST
 /set-message SetMessageR POST
+/sayhello SayHelloR GET
 |]
 
 instance Yesod App where
@@ -47,6 +49,11 @@ getHomeR = do
         My message is: #
         <input type=text name=message>
         <button>Go
+    <hr>
+    <p>
+        <a href=@{SetNameR}>Set your name
+    <p>
+        <a href=@{SayHelloR}>Say hello
 |]
 
 postHomeR :: Handler ()
@@ -58,11 +65,36 @@ postHomeR = do
     liftIO $ print (key, mval)
     redirect HomeR
 
+getSetNameR :: Handler Html
+getSetNameR = defaultLayout [whamlet|
+<form method=post>
+    My name is #
+    <input type=text name=name>
+    . #
+    <input type=submit value="Set name">
+|]
+
+postSetNameR :: Handler ()
+postSetNameR = do
+    name <- runInputPost $ ireq textField "name"
+    setSession "name" name
+    redirectUltDest HomeR
+
 postSetMessageR :: Handler ()
 postSetMessageR = do
     msg <- runInputPost $ ireq textField "message"
     setMessage $ toHtml msg
     redirect HomeR
+
+getSayHelloR :: Handler Html
+getSayHelloR = do
+    mname <- lookupSession "name"
+    case mname of
+        Nothing -> do
+            setUltDestCurrent
+            setMessage "Please tell me your name"
+            redirect SetNameR
+        Just name -> defaultLayout [whamlet|<p>Welcome #{name}|]
 
 main :: IO ()
 main = warp 3000 App
