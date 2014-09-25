@@ -6,8 +6,9 @@ import Data.Time
 import Control.Monad.IO.Class (liftIO)
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
-Person
-    name String
+Person sql=the-person-table
+    Id sql=id_people
+    name String sql=first_name
     age Int Maybe
     created UTCTime default=CURRENT_TIME
     language String default='Haskell'
