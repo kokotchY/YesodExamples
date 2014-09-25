@@ -18,28 +18,27 @@ main :: IO ()
 main = runSqlite ":memory:" $ do
     runMigration migrateAll
     personId <- insert $ Person "Michael" "Snoyman" 26
-    maybePerson <- get personId
-    liftIO $ putStrLn "One guy with get"
-    case maybePerson of
-        Nothing -> liftIO $ putStrLn "Just kidding, not really there"
-        Just person -> liftIO $ print person
-    maybePerson2 <- getBy $ PersonName "Michael" "Snoyman2"
-    liftIO $ putStrLn "One guy with getBy"
-    case maybePerson2 of
-        Nothing -> liftIO $ putStrLn "Just kidding, not really there"
-        Just person -> liftIO $ print person
-    liftIO $ putStrLn "List of guys"
-    people <- selectList [PersonAge >. 25, PersonAge <=. 30] []
-    liftIO $ print people
-    liftIO $ putStrLn "Another list of guys"
-    people <- selectList ([PersonAge >. 25, PersonAge <=. 30]
+    displayMaybeForQuery "One guy with get" $ get personId
+    displayMaybeForQuery "Ony guy with getBy" $ getBy $ PersonName "Michael" "Snoyman2"
+    displayListForSelect "List of guys" $ selectList [PersonAge >. 25, PersonAge <=. 30] []
+    displayListForSelect "Another list of guys" $ selectList ([PersonAge >. 25, PersonAge <=. 30]
         ||. [PersonFirstName /<-. ["Adam", "Bonny"]]
         ||. ([PersonAge ==. 50] ||. [PersonAge ==. 60])
         ) []
+    displayListForSelect "Paginated list" $ resultsForPage 1
+
+displayMaybeForQuery message query = do
+    liftIO $ putStrLn message
+    maybePerson <- query
+    case maybePerson of
+        Nothing -> liftIO $ putStrLn "Just kidding, not really there"
+        Just person -> liftIO $ print person
+
+displayListForSelect message select = do
+    liftIO $ putStrLn message
+    people <- select
     liftIO $ print people
-    liftIO $ putStrLn "Paginated list"
-    people <- resultsForPage 1
-    liftIO $ print people
+
 
 resultsForPage pageNumber = do
     let resultsPerPage = 10
