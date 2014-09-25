@@ -8,13 +8,18 @@ import Control.Monad.IO.Class (liftIO)
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Person
     name String
-    age Int Maybe
+    age Int
+    deriving Show
+Car
+    color String
+    make String
+    model String
     deriving Show
 |]
 
 main :: IO ()
 main = runSqlite ":memory:" $ do
     runMigration migrateAll
-    michaelId <- insert $ Person "Michael" $ Just 26
+    michaelId <- insert $ Person "Michael" 26
     michael <- get michaelId
     liftIO $ print michael
