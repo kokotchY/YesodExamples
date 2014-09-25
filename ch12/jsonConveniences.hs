@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, RecordWildCards, QuasiQuotes, TemplateHaskell, TypeFamilies #-}
+{-# LANGUAGE OverloadedStrings, RecordWildCards, QuasiQuotes, TemplateHaskell, TypeFamilies, ExistentialQuantification #-}
 import Yesod
 import Data.Text (Text)
 
@@ -16,15 +16,35 @@ instance ToJSON Person where
 data App = App
 
 mkYesod "App" [parseRoutes|
-/ HomeR GET
-/second Home2R GET
-/third Home3R GET
+/ RootR GET
+/example/1 HomeR GET
+/example/2 Home2R GET
+/example/3 Home3R GET
+/example/4 Home4R GET
 |]
 
 instance Yesod App
 
 mimeType :: ContentType
 mimeType = "text/haskell-show"
+
+pages = [HomeR, Home2R, Home3R, Home4R]
+
+getRootR :: Handler Html
+getRootR = do
+    defaultLayout [whamlet|
+<div>
+    <ul>
+        $forall page <- pages
+            <li><a href=@{page}>Example #{show page}
+    |]
+
+data HaskellShow = forall a. Show a => HaskellShow a
+
+instance ToContent HaskellShow where
+    toContent (HaskellShow x) = toContent $ show x
+instance ToTypedContent HaskellShow where
+    toTypedContent = TypedContent mimeType . toContent
 
 getHomeR :: Handler Value
 getHomeR = returnJson $ Person "Bla" 21
@@ -42,6 +62,12 @@ getHome2R = selectRep $ do
 getHome3R :: Handler TypedContent
 getHome3R =
     return $ TypedContent mimeType $ toContent $ show person
+    where
+        person = Person "Michael" 28
+
+getHome4R :: Handler HaskellShow
+getHome4R =
+    return $ HaskellShow person
     where
         person = Person "Michael" 28
 
