@@ -22,3 +22,7 @@ main = runSqlite ":memory:" $ do
     case maybePerson of
         Nothing -> liftIO $ putStrLn "Just kidding, not really there"
         Just person -> liftIO $ print person
+    maybePerson2 <- getBy $ PersonName "Michael" "Snoyman2"
+    case maybePerson2 of
+        Nothing -> liftIO $ putStrLn "Just kidding, not really there"
+        Just person -> liftIO $ print person
