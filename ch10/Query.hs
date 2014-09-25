@@ -37,3 +37,18 @@ main = runSqlite ":memory:" $ do
         ||. ([PersonAge ==. 50] ||. [PersonAge ==. 60])
         ) []
     liftIO $ print people
+    liftIO $ putStrLn "Paginated list"
+    people <- resultsForPage 1
+    liftIO $ print people
+
+resultsForPage pageNumber = do
+    let resultsPerPage = 10
+    selectList
+        [PersonAge >=. 18]
+        [
+            Desc PersonAge,
+            Asc PersonLastName,
+            Asc PersonFirstName,
+            LimitTo resultsPerPage,
+            OffsetBy $ (pageNumber - 1) * resultsPerPage
+        ]
