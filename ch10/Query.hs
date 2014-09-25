@@ -4,6 +4,7 @@ import Database.Persist.TH
 import Database.Persist.Sqlite
 import Data.Time
 import Control.Monad.IO.Class (liftIO)
+import Text.Printf
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Person
@@ -14,10 +15,18 @@ Person
     deriving Show
 |]
 
+peoples = [
+    Person "bla" "bli" 26,
+    Person "blo" "blu" 29,
+    Person "ha" "hi" 43,
+    Person "hihi" "hoho" 50,
+    Person "Adam" "bla" 34]
+
 main :: IO ()
 main = runSqlite ":memory:" $ do
     runMigration migrateAll
     personId <- insert $ Person "Michael" "Snoyman" 26
+    mapM_ insert peoples
     displayMaybeForQuery "One guy with get" $ get personId
     displayMaybeForQuery "Ony guy with getBy" $ getBy $ PersonName "Michael" "Snoyman2"
     displayListForSelect "List of guys" $ selectList [PersonAge >. 25, PersonAge <=. 30] []
@@ -25,7 +34,13 @@ main = runSqlite ":memory:" $ do
         ||. [PersonFirstName /<-. ["Adam", "Bonny"]]
         ||. ([PersonAge ==. 50] ||. [PersonAge ==. 60])
         ) []
-    displayListForSelect "Paginated list" $ resultsForPage 1
+
+    displayNumberPage "Paginated list (page %d)" resultsForPage
+
+displayNumberPage message func = mapM_ (\x -> displayListForSelect (formattedMessage x) (func x)) [1..4]
+    where
+        formattedMessage x = printf message x
+
 
 displayMaybeForQuery message query = do
     liftIO $ putStrLn message
@@ -37,11 +52,11 @@ displayMaybeForQuery message query = do
 displayListForSelect message select = do
     liftIO $ putStrLn message
     people <- select
-    liftIO $ print people
+    liftIO $ mapM_ ((\x -> putStrLn $ "\t-" ++ show x) . entityVal) people
 
 
 resultsForPage pageNumber = do
-    let resultsPerPage = 10
+    let resultsPerPage = 3
     selectList
         [PersonAge >=. 18]
         [
