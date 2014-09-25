@@ -1,6 +1,5 @@
-{-# LANGUAGE OverloadedStrings, RecordWildCards #-}
-import Data.Aeson
-import qualified Data.ByteString.Lazy.Char8 as L
+{-# LANGUAGE OverloadedStrings, RecordWildCards, QuasiQuotes, TemplateHaskell, TypeFamilies #-}
+import Yesod
 import Data.Text (Text)
 
 data Person = Person {
@@ -14,5 +13,16 @@ instance ToJSON Person where
           "age" .= age
         ]
 
+data App = App
+
+mkYesod "App" [parseRoutes|
+/ HomeR GET
+|]
+
+instance Yesod App
+
+getHomeR :: Handler Value
+getHomeR = returnJson $ Person "Bla" 21
+
 main :: IO ()
-main = L.putStrLn $ encode $ Person "Bla" 21
+main = warp 3000 App
