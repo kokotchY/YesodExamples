@@ -37,6 +37,24 @@ main = runSqlite ":memory:" $ do
 
     displayNumberPage "Paginated list (page %d)" resultsForPage
 
+    update personId [PersonAge =. 27]
+    displayMaybeForQuery "Modified guy" $ get personId
+    haveBirthday personId
+    displayMaybeForQuery "Birthday guy" $ get personId
+
+    updateWhere [PersonFirstName ==. "bla"] [PersonAge *=. 2]
+    displayMaybeForQuery "Long day for bla" $ getBy $ PersonName "bla" "bli"
+
+    replace personId $ Person "John" "Doe" 20
+    displayMaybeForQuery "Replaced guy by a John Doe" $ get personId
+
+    deleteWhere [PersonAge >=. 30]
+    displayListForSelect "All guys" allGuysWithoutOptions
+
+allGuys = selectList ([] :: [Filter Person])
+
+allGuysWithoutOptions = allGuys []
+
 displayNumberPage message func = mapM_ (\x -> displayListForSelect (formattedMessage x) (func x)) [1..4]
     where
         formattedMessage x = printf message x
@@ -66,3 +84,5 @@ resultsForPage pageNumber = do
             LimitTo resultsPerPage,
             OffsetBy $ (pageNumber - 1) * resultsPerPage
         ]
+
+haveBirthday personId = update personId [PersonAge +=. 1]
