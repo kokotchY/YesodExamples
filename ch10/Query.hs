@@ -19,10 +19,21 @@ main = runSqlite ":memory:" $ do
     runMigration migrateAll
     personId <- insert $ Person "Michael" "Snoyman" 26
     maybePerson <- get personId
+    liftIO $ putStrLn "One guy with get"
     case maybePerson of
         Nothing -> liftIO $ putStrLn "Just kidding, not really there"
         Just person -> liftIO $ print person
     maybePerson2 <- getBy $ PersonName "Michael" "Snoyman2"
+    liftIO $ putStrLn "One guy with getBy"
     case maybePerson2 of
         Nothing -> liftIO $ putStrLn "Just kidding, not really there"
         Just person -> liftIO $ print person
+    liftIO $ putStrLn "List of guys"
+    people <- selectList [PersonAge >. 25, PersonAge <=. 30] []
+    liftIO $ print people
+    liftIO $ putStrLn "Another list of guys"
+    people <- selectList ([PersonAge >. 25, PersonAge <=. 30]
+        ||. [PersonFirstName /<-. ["Adam", "Bonny"]]
+        ||. ([PersonAge ==. 50] ||. [PersonAge ==. 60])
+        ) []
+    liftIO $ print people
