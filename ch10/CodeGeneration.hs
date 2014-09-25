@@ -19,6 +19,7 @@ Car
 
 main :: IO ()
 main = runSqlite ":memory:" $ do
+    printMigration migrateAll
     runMigration migrateAll
     michaelId <- insert $ Person "Michael" 26
     michael <- get michaelId
