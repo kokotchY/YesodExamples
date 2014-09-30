@@ -4,7 +4,7 @@ import Database.Persist.Sqlite
 import Control.Monad.Trans.Resource (runResourceT)
 import Control.Monad.Logger (runStderrLoggingT)
 import Control.Applicative ((<$>),(<*>))
-import Data.Text
+import Data.Text (Text, unpack)
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Person
@@ -20,6 +20,7 @@ mkYesod "PersistTest" [parseRoutes|
 / HomeR GET
 /person/#PersonId PersonR GET
 /addPerson AddPersonR GET POST
+/deletePerson/#PersonId DeletePersonR GET
 |]
 
 instance Yesod PersistTest
@@ -39,10 +40,26 @@ getHomeR = do
     people <- runDB $ selectList [] [Asc PersonAge]
     defaultLayout [whamlet|
     <a href=@{AddPersonR}>Add person
-    <ul>
-        $forall Entity personid person <- people
-            <li>
-                <a href=@{PersonR personid}>#{personFirstName person}
+    <br />
+    $if null people
+        No people in database
+    $else
+        <table>
+            <tr>
+                <th>Id
+                <th>First name
+                <th>Last name
+                <th>Age
+                <th>Actions
+            $forall Entity personid person <- people
+                <tr>
+                    <td>#{unSqlBackendKey $ unPersonKey personid}
+                    <td>
+                        <a href=@{PersonR personid}>#{personFirstName person}
+                    <td>#{personLastName person}
+                    <td>#{show $ personAge person}
+                    <td>
+                        <a href=@{DeletePersonR personid}>Delete
     |]
 
 getPersonR :: PersonId -> Handler String
@@ -98,6 +115,16 @@ postAddPersonR = do
                 ^{widget}
                 <input type=submit value="Add">
             |]
+
+getDeletePersonR :: PersonId -> Handler Html
+getDeletePersonR personId = do
+    person <- runDB $ get personId
+    runDB $ delete personId
+    defaultLayout [whamlet|
+    <h1>Delete a user
+    <p>The user #{show person} has been deleted
+    <a href=@{HomeR}>Home
+    |]
 
 openConnectionCount :: Int
 openConnectionCount = 10
