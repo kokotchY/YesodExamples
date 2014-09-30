@@ -2,8 +2,7 @@
 import Yesod
 import Database.Persist.Sqlite
 import Control.Monad.Trans.Resource (runResourceT)
-import Control.Monad.Logger (runStderrLoggingT, runNoLoggingT, MonadLogger, monadLoggerLog)
-import Control.Applicative (pure)
+import Control.Monad.Logger (runStderrLoggingT)
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Person
@@ -48,8 +47,8 @@ openConnectionCount :: Int
 openConnectionCount = 10
 
 main :: IO ()
-main = runNoLoggingT $ withSqlitePool "test3.db" openConnectionCount $ \pool -> do
-    runResourceT $ runStderrLoggingT $ flip runSqlPool pool $ do
+main = runStderrLoggingT $ withSqlitePool "test3.db" openConnectionCount $ \pool -> liftIO $ do
+    runResourceT $ flip runSqlPool pool $ do
         runMigration migrateAll
         insert $ Person "Michael" "Snoyman" 26
     warp 3000 $ PersistTest pool
