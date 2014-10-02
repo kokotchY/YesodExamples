@@ -1,0 +1,6 @@
+<h1>
+    Beer
+<p>
+    Youpie, c'est bon la biere: #{text}
+<a href=@{HomeR}>
+    Home
