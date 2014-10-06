@@ -1,6 +1,6 @@
 {-# LANGUAGE EmptyDataDecls, FlexibleContexts, GADTs, GeneralizedNewtypeDeriving, MultiParamTypeClasses, OverloadedStrings, QuasiQuotes, TemplateHaskell, TypeFamilies, ViewPatterns #-}
 import Control.Monad.Logger
-import Data.Text (Text)
+import Data.Text (Text, unpack)
 import Database.Persist.Sqlite
 import Yesod
 
@@ -37,14 +37,21 @@ getHomeR = do
         setTitle "Blog posts"
         [whamlet|
             <ul>
-                $forall Entity blogid blog <- blogs
-                    <li>
-                        <a href=@{BlogR blogid}>
-                            #{blogTitle blog} by #{show $ blogAuthor blog}
+                $forall blogEntity <- blogs
+                    ^{showBlogLink blogEntity}
         |]
 
+showBlogLink :: Entity Blog -> Widget
+showBlogLink (Entity blogid blog) = do
+    author <- handlerToWidget $ runDB $ get404 $ blogAuthor blog
+    [whamlet|
+    <li>
+        <a href=@{BlogR blogid}>
+            #{blogTitle blog} by #{authorName author}
+    |]
+
 getBlogR :: BlogId -> Handler Html
-getBlogR _ = error "Todo"
+getBlogR _ = error "todo"
 
 main :: IO ()
 main = do
