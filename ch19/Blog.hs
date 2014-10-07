@@ -2,7 +2,11 @@
 import Control.Monad.Logger
 import Data.Text (Text, unpack)
 import Database.Persist.Sqlite
+import qualified Database.Esqueleto as E
+import Database.Esqueleto ((^.))
 import Yesod
+import qualified Data.Conduit.List as CL
+import Data.Conduit (($=))
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Author
@@ -28,6 +32,8 @@ instance YesodPersistRunner App where
 mkYesod "App" [parseRoutes|
 / HomeR GET
 /raw Home2R GET
+/stream StreamR GET
+/esqueleto EsqueletoR GET
 /blog/#BlogId BlogR GET
 |]
 
@@ -58,6 +64,49 @@ getHome2R = do
                         <a href=@{BlogR blogid}>
                             #{blogTitle blog} by #{authorName author}
         |]
+
+getEsqueletoR :: Handler Html
+getEsqueletoR = do
+    blogs <- runDB
+        $ E.select
+        $ E.from $ \(blog `E.InnerJoin` author) -> do
+            E.on $ blog ^. BlogAuthor E.==. author ^. AuthorId
+            return
+                ( blog   ^. BlogId
+                , blog   ^. BlogTitle
+                , author ^. AuthorName
+                )
+
+    defaultLayout $ do
+        setTitle "Blog posts"
+        [whamlet|
+            <ul>
+                $forall (E.Value blogid, E.Value title, E.Value name) <- blogs
+                    <li>
+                        <a href=@{BlogR blogid}>#{title} by #{name}
+        |]
+
+getStreamR :: Handler TypedContent
+getStreamR = do
+    let blogsSrc = E.selectSource
+            $ E.from $ \(blog `E.InnerJoin` author) -> do
+                E.on $ blog ^. BlogAuthor E.==. author ^. AuthorId
+                return
+                    ( blog ^. BlogId
+                    , blog ^. BlogTitle
+                    , author ^. AuthorName
+                    )
+    render <- getUrlRenderParams
+    respondSourceDB typeHtml $ do
+        sendChunkText "<html><head><title>Blog posts</title></head><body><ul>"
+        blogsSrc $= CL.map (\(E.Value blogid, E.Value title, E.Value name) ->
+            toFlushBuilder $
+            [hamlet|
+                <li>
+                    <a href=@{BlogR blogid}>#{title} by #{name}
+            |] render
+            )
+        sendChunkText "</ul></body></html>"
 
 showBlogLink :: Entity Blog -> Widget
 showBlogLink (Entity blogid blog) = do
