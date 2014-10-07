@@ -27,6 +27,7 @@ instance YesodPersistRunner App where
 
 mkYesod "App" [parseRoutes|
 / HomeR GET
+/raw Home2R GET
 /blog/#BlogId BlogR GET
 |]
 
@@ -39,6 +40,23 @@ getHomeR = do
             <ul>
                 $forall blogEntity <- blogs
                     ^{showBlogLink blogEntity}
+        |]
+
+getHome2R :: Handler Html
+getHome2R = do
+    blogs <- runDB $ rawSql
+        "SELECT ??, ?? \
+        \FROM blog INNER JOIN author \
+        \ON blog.author=author.id"
+        []
+    defaultLayout $ do
+        setTitle "Blog posts"
+        [whamlet|
+            <ul>
+                $forall (Entity blogid blog, Entity _ author) <- blogs
+                    <li>
+                        <a href=@{BlogR blogid}>
+                            #{blogTitle blog} by #{authorName author}
         |]
 
 showBlogLink :: Entity Blog -> Widget
