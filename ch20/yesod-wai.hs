@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings, TypeFamilies #-}
 import Data.Text (Text)
 import Network.Wai (pathInfo)
-import Network.Wai.Handler.Warp (run)
 import qualified Text.Blaze.Html5 as H
 import Yesod.Core (HandlerT, Html, RenderRoute (..),
                    TypedContent, Value, Yesod,
@@ -9,6 +8,7 @@ import Yesod.Core (HandlerT, Html, RenderRoute (..),
                    notFound, object, provideRep,
                    selectRep, toWaiApp, yesodRunner,
                    (.=))
+import Yesod.Core.Dispatch (warp)
 
 data App = App {
     welcomeMessageHtml :: !Html,
@@ -46,9 +46,8 @@ getHomeR = do
 
 main :: IO ()
 main = do
-    waiApp <- toWaiApp App {
+    warp 3000 App {
         welcomeMessageHtml = H.p "Welcome to Yesod!",
         welcomeMessageText = "Welcome to Yesod!",
         welcomeMessageJson = object [ "msg" .= ("Welcome to Yesod!" :: Text)]
     }
-    run 3000 waiApp
