@@ -1,13 +1,20 @@
 {-# LANGUAGE OverloadedStrings, TypeFamilies #-}
-import Network.HTTP.Types (status200)
+import Data.Text (Text)
 import Network.Wai (pathInfo)
 import Network.Wai.Handler.Warp (run)
-import Text.Blaze.Html.Renderer.Utf8 (renderHtmlBuilder)
 import qualified Text.Blaze.Html5 as H
-import Yesod.Core (HandlerT, Html, RenderRoute (..), Yesod, YesodDispatch (..), getYesod, notFound, toWaiApp, yesodRunner)
+import Yesod.Core (HandlerT, Html, RenderRoute (..),
+                   TypedContent, Value, Yesod,
+                   YesodDispatch (..), getYesod,
+                   notFound, object, provideRep,
+                   selectRep, toWaiApp, yesodRunner,
+                   (.=))
 
 data App = App {
-    welcomeMessage :: !Html
+    welcomeMessageHtml :: !Html,
+    welcomeMessageText :: !Text,
+    welcomeMessageJson :: !Value
+
 }
 
 instance Yesod App
@@ -29,15 +36,19 @@ instance YesodDispatch App where
                     Just HomeR -> getHomeR
         in yesodRunner handler yesodRunnerEnv maybeRoute req sendResponse
 
-getHomeR :: HandlerT App IO Html
+getHomeR :: HandlerT App IO TypedContent
 getHomeR = do
     site <- getYesod
-    return $ welcomeMessage site
+    selectRep $ do
+        provideRep $ return $ welcomeMessageHtml site
+        provideRep $ return $ welcomeMessageText site
+        provideRep $ return $ welcomeMessageJson site
 
 main :: IO ()
 main = do
-    let welcome = H.p "Welcome to Yesod!"
     waiApp <- toWaiApp App {
-        welcomeMessage = welcome
+        welcomeMessageHtml = H.p "Welcome to Yesod!",
+        welcomeMessageText = "Welcome to Yesod!",
+        welcomeMessageJson = object [ "msg" .= ("Welcome to Yesod!" :: Text)]
     }
     run 3000 waiApp
