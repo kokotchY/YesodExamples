@@ -1,11 +1,10 @@
 {-# LANGUAGE OverloadedStrings, TypeFamilies #-}
 import Network.HTTP.Types (status200)
-import Network.Wai (responseBuilder)
+import Network.Wai (pathInfo)
 import Network.Wai.Handler.Warp (run)
 import Text.Blaze.Html.Renderer.Utf8 (renderHtmlBuilder)
 import qualified Text.Blaze.Html5 as H
-import Yesod.Core (Html, RenderRoute (..), Yesod, YesodDispatch (..), toWaiApp)
-import Yesod.Core.Types (YesodRunnerEnv (..))
+import Yesod.Core (HandlerT, Html, RenderRoute (..), Yesod, YesodDispatch (..), getYesod, notFound, toWaiApp, yesodRunner)
 
 data App = App {
     welcomeMessage :: !Html
@@ -20,11 +19,20 @@ instance RenderRoute App where
     renderRoute HomeR = ( [], [] )
 
 instance YesodDispatch App where
-    yesodDispatch (YesodRunnerEnv _logger site _sessionBackend) _req sendResponse =
-        sendResponse $ responseBuilder
-            status200
-            [("Content-Type", "text/html")]
-            (renderHtmlBuilder $ welcomeMessage site)
+    yesodDispatch yesodRunnerEnv req sendResponse =
+        let maybeRoute = case pathInfo req of
+                [] -> Just HomeR
+                _ -> Nothing
+            handler =
+                case maybeRoute of
+                    Nothing -> notFound
+                    Just HomeR -> getHomeR
+        in yesodRunner handler yesodRunnerEnv maybeRoute req sendResponse
+
+getHomeR :: HandlerT App IO Html
+getHomeR = do
+    site <- getYesod
+    return $ welcomeMessage site
 
 main :: IO ()
 main = do
