@@ -1,24 +1,27 @@
-import Data.Text (pack)
-import Text.Blaze.Html5 (toValue, (!))
-import qualified Text.Blaze.Html5 as H
-import qualified Text.Blaze.Html5.Attributes as A
+{-# LANGUAGE QuasiQuotes #-}
+import Data.Text (Text, pack)
+import Text.Julius (Javascript)
+import Text.Lucius (Css)
 import Yesod.Core
 
 getHomeR :: LiteHandler Html
-getHomeR = return $ H.docTypeHtml $ do
-    H.head $ do
-        H.title $ toHtml "Hi There!"
-        H.link ! A.rel (toValue "stylesheet") ! A.href ("style.css")
-        H.script ! A.src (toValue "/script.js") $ return ()
-    H.body $ do
-        H.h1 $ toHtml "Hello World!"
+getHomeR = withUrlRenderer
+    [hamlet|
+    $doctype 5
+    <html>
+        <head>
+            <title>Hi There!
+            <link ref=stylesheet href=/style.css>
+            <script src=/script.js>
+        <body>
+            <h1>Hello World!
+    |]
 
-getStyleR :: LiteHandler TypedContent
-getStyleR = return $ TypedContent typeCss $ toContent "h1 { color: red }"
+getStyleR :: LiteHandler Css
+getStyleR = withUrlRenderer [lucius|h1 { color: red }|]
 
-getScriptR :: LiteHandler TypedContent
-getScriptR = return $ TypedContent typeJavascript $ toContent
-    "alert('Yay. Javascript works too!');"
+getScriptR :: LiteHandler Javascript
+getScriptR = withUrlRenderer [julius|alert('Yay, Javascript works too!');|]
 
 main :: IO ()
 main = warp 3000 $ liteApp $ do
