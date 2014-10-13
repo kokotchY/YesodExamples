@@ -1,12 +1,17 @@
 import Data.Text (pack)
+import Text.Blaze.Html5 (toValue, (!))
+import qualified Text.Blaze.Html5 as H
+import qualified Text.Blaze.Html5.Attributes as A
 import Yesod.Core
 
-getHomeR :: LiteHandler TypedContent
-getHomeR = return $ TypedContent typeHtml $ toContent
-   "<html><head><title>Hi There!</title>\
-    \<link rel='stylesheet' href='/style.css'>\
-    \<script src='/script.js'></script></head>\
-    \<body><h1>Hello World!</h1></body></html>"
+getHomeR :: LiteHandler Html
+getHomeR = return $ H.docTypeHtml $ do
+    H.head $ do
+        H.title $ toHtml "Hi There!"
+        H.link ! A.rel (toValue "stylesheet") ! A.href ("style.css")
+        H.script ! A.src (toValue "/script.js") $ return ()
+    H.body $ do
+        H.h1 $ toHtml "Hello World!"
 
 getStyleR :: LiteHandler TypedContent
 getStyleR = return $ TypedContent typeCss $ toContent "h1 { color: red }"
